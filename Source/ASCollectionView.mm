@@ -183,6 +183,10 @@ static NSString * const kReuseIdentifier = @"_ASCollectionReuseIdentifier";
     unsigned int collectionViewShouldShowMenuForItem:1;
     unsigned int collectionViewCanPerformActionForItem:1;
     unsigned int collectionViewPerformActionForItem:1;
+    unsigned int collectionViewCanFocusItem:1;
+    unsigned int collectionViewShouldUpdateFocus:1;
+    unsigned int collectionViewDidUpdateFocus:1;
+    unsigned int collectionViewIndexPathForPreferredFocusedView:1;
     unsigned int collectionViewWillBeginBatchFetch:1;
     unsigned int shouldBatchFetchForCollectionView:1;
     unsigned int collectionNodeWillDisplayItem:1;
@@ -197,6 +201,10 @@ static NSString * const kReuseIdentifier = @"_ASCollectionReuseIdentifier";
     unsigned int collectionNodeShouldShowMenuForItem:1;
     unsigned int collectionNodeCanPerformActionForItem:1;
     unsigned int collectionNodePerformActionForItem:1;
+    unsigned int collectionNodeCanFocusItem:1;
+    unsigned int collectionNodeShouldUpdateFocus:1;
+    unsigned int collectionNodeDidUpdateFocus:1;
+    unsigned int collectionNodeIndexPathForPreferredFocusedView:1;
     unsigned int collectionNodeWillBeginBatchFetch:1;
     unsigned int collectionNodeWillDisplaySupplementaryElement:1;
     unsigned int collectionNodeDidEndDisplayingSupplementaryElement:1;
@@ -547,6 +555,10 @@ static NSString * const kReuseIdentifier = @"_ASCollectionReuseIdentifier";
     _asyncDelegateFlags.collectionViewShouldShowMenuForItem = [_asyncDelegate respondsToSelector:@selector(collectionView:shouldShowMenuForItemAtIndexPath:)];
     _asyncDelegateFlags.collectionViewCanPerformActionForItem = [_asyncDelegate respondsToSelector:@selector(collectionView:canPerformAction:forItemAtIndexPath:withSender:)];
     _asyncDelegateFlags.collectionViewPerformActionForItem = [_asyncDelegate respondsToSelector:@selector(collectionView:performAction:forItemAtIndexPath:withSender:)];
+    _asyncDelegateFlags.collectionViewCanFocusItem = [_asyncDelegate respondsToSelector:@selector(collectionView:canFocusItemAtIndexPath:)];
+    _asyncDelegateFlags.collectionViewShouldUpdateFocus = [_asyncDelegate respondsToSelector:@selector(collectionView:shouldUpdateFocusInContext:)];
+    _asyncDelegateFlags.collectionViewDidUpdateFocus = [_asyncDelegate respondsToSelector:@selector(collectionView:didUpdateFocusInContext:withAnimationCoordinator:)];
+    _asyncDelegateFlags.collectionViewIndexPathForPreferredFocusedView = [_asyncDelegate respondsToSelector:@selector(indexPathForPreferredFocusedViewInCollectionView:)];
     _asyncDelegateFlags.collectionNodeWillDisplayItem = [_asyncDelegate respondsToSelector:@selector(collectionNode:willDisplayItemWithNode:)];
     _asyncDelegateFlags.collectionNodeDidEndDisplayingItem = [_asyncDelegate respondsToSelector:@selector(collectionNode:didEndDisplayingItemWithNode:)];
     _asyncDelegateFlags.collectionNodeWillBeginBatchFetch = [_asyncDelegate respondsToSelector:@selector(collectionNode:willBeginBatchFetchWithContext:)];
@@ -561,6 +573,10 @@ static NSString * const kReuseIdentifier = @"_ASCollectionReuseIdentifier";
     _asyncDelegateFlags.collectionNodeShouldShowMenuForItem = [_asyncDelegate respondsToSelector:@selector(collectionNode:shouldShowMenuForItemAtIndexPath:)];
     _asyncDelegateFlags.collectionNodeCanPerformActionForItem = [_asyncDelegate respondsToSelector:@selector(collectionNode:canPerformAction:forItemAtIndexPath:sender:)];
     _asyncDelegateFlags.collectionNodePerformActionForItem = [_asyncDelegate respondsToSelector:@selector(collectionNode:performAction:forItemAtIndexPath:sender:)];
+    _asyncDelegateFlags.collectionNodeCanFocusItem = [_asyncDelegate respondsToSelector:@selector(collectionNode:canFocusItemAtIndexPath:)];
+    _asyncDelegateFlags.collectionNodeShouldUpdateFocus = [_asyncDelegate respondsToSelector:@selector(collectionNode:shouldUpdateFocusInContext:)];
+    _asyncDelegateFlags.collectionNodeDidUpdateFocus = [_asyncDelegate respondsToSelector:@selector(collectionNode:didUpdateFocusInContext:withAnimationCoordinator:)];
+    _asyncDelegateFlags.collectionNodeIndexPathForPreferredFocusedView = [_asyncDelegate respondsToSelector:@selector(indexPathForPreferredFocusedViewInCollectionNode:)];
     _asyncDelegateFlags.collectionNodeWillDisplaySupplementaryElement = [_asyncDelegate respondsToSelector:@selector(collectionNode:willDisplaySupplementaryElementWithNode:)];
     _asyncDelegateFlags.collectionNodeDidEndDisplayingSupplementaryElement = [_asyncDelegate respondsToSelector:@selector(collectionNode:didEndDisplayingSupplementaryElementWithNode:)];
     _asyncDelegateFlags.interop = [_asyncDelegate conformsToProtocol:@protocol(ASCollectionDelegateInterop)];
@@ -1511,6 +1527,58 @@ static NSString * const kReuseIdentifier = @"_ASCollectionReuseIdentifier";
     [_asyncDelegate collectionView:self didUnhighlightItemAtIndexPath:indexPath];
 #pragma clang diagnostic pop
   }
+}
+
+- (BOOL)collectionView:(UICollectionView *)collectionView canFocusItemAtIndexPath:(NSIndexPath *)indexPath
+{
+  if (_asyncDelegateFlags.collectionNodeCanFocusItem) {
+    GET_COLLECTIONNODE_OR_RETURN(collectionNode, YES);
+    indexPath = [self convertIndexPathToCollectionNode:indexPath];
+    if (indexPath != nil) {
+      return [_asyncDelegate collectionNode:collectionNode canFocusItemAtIndexPath:indexPath];
+    }
+  } else if (_asyncDelegateFlags.collectionViewCanFocusItem) {
+    return [_asyncDelegate collectionView:self canFocusItemAtIndexPath:indexPath];
+  }
+  return YES;
+}
+
+- (BOOL)collectionView:(UICollectionView *)collectionView shouldUpdateFocusInContext:(UICollectionViewFocusUpdateContext *)context
+{
+  if (_asyncDelegateFlags.collectionNodeShouldUpdateFocus) {
+    GET_COLLECTIONNODE_OR_RETURN(collectionNode, YES);
+    return [_asyncDelegate collectionNode:collectionNode shouldUpdateFocusInContext:context];
+  } else if (_asyncDelegateFlags.collectionViewShouldUpdateFocus) {
+    return [_asyncDelegate collectionView:self shouldUpdateFocusInContext:context];
+  }
+  return YES;
+}
+
+- (void)collectionView:(UICollectionView *)collectionView didUpdateFocusInContext:(UICollectionViewFocusUpdateContext *)context withAnimationCoordinator:(UIFocusAnimationCoordinator *)coordinator
+{
+  if (_asyncDelegateFlags.collectionNodeDidUpdateFocus) {
+    if (ASCollectionNode *collectionNode = self.collectionNode) {
+      [_asyncDelegate collectionNode:collectionNode didUpdateFocusInContext:context withAnimationCoordinator:coordinator];
+    }
+  }
+
+  if (_asyncDelegateFlags.collectionViewDidUpdateFocus) {
+    [_asyncDelegate collectionView:self didUpdateFocusInContext:context withAnimationCoordinator:coordinator];
+  }
+}
+
+- (NSIndexPath *)indexPathForPreferredFocusedViewInCollectionView:(UICollectionView *)collectionView
+{
+  if (_asyncDelegateFlags.collectionNodeIndexPathForPreferredFocusedView) {
+    GET_COLLECTIONNODE_OR_RETURN(collectionNode, nil);
+    NSIndexPath *indexPath = [_asyncDelegate indexPathForPreferredFocusedViewInCollectionNode:collectionNode];
+    if (indexPath != nil) {
+      return [self convertIndexPathFromCollectionNode:indexPath waitingIfNeeded:NO];
+    }
+  } else if (_asyncDelegateFlags.collectionViewIndexPathForPreferredFocusedView) {
+    return [_asyncDelegate indexPathForPreferredFocusedViewInCollectionView:self];
+  }
+  return nil;
 }
 
 - (BOOL)collectionView:(UICollectionView *)collectionView shouldShowMenuForItemAtIndexPath:(nonnull NSIndexPath *)indexPath
