@@ -124,6 +124,42 @@
   return [self.node pointInside:pointOnNode withEvent:event];
 }
 
+#if TARGET_OS_TV
+- (BOOL)canBecomeFocused
+{
+  ASCellNode *node = self.node;
+  if (node == nil) {
+    return [super canBecomeFocused];
+  }
+  return [node canBecomeFocused];
+}
+
+- (BOOL)shouldUpdateFocusInContext:(UIFocusUpdateContext *)context
+{
+  ASCellNode *node = self.node;
+  if (node == nil) {
+    return [super shouldUpdateFocusInContext:context];
+  }
+  return [node shouldUpdateFocusInContext:context];
+}
+
+- (void)didUpdateFocusInContext:(UIFocusUpdateContext *)context withAnimationCoordinator:(UIFocusAnimationCoordinator *)coordinator
+{
+  [super didUpdateFocusInContext:context withAnimationCoordinator:coordinator];
+  [self.node didUpdateFocusInContext:context withAnimationCoordinator:coordinator];
+}
+
+- (UIView *)preferredFocusedView
+{
+  ASCellNode *node = self.node;
+  if (node == nil) {
+    return [super preferredFocusedView];
+  }
+  UIView *preferredFocusedView = [node preferredFocusedView];
+  return preferredFocusedView ?: [super preferredFocusedView];
+}
+#endif
+
 @end
 
 /**
