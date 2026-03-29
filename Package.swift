@@ -10,7 +10,7 @@ let package = Package(
         .binaryTarget(
             name: "AsyncDisplayKit",
             url: "https://github.com/resoul/Texture/releases/download/3.2.0/AsyncDisplayKit.xcframework.zip",
-            checksum: "4ceba493d467a611afbdd1ee00b6128be26dc5b8a9a0cebf480f582df676ec37"
+            checksum: "835f32720577a1758b761494a50a9b7621508ae3e8bb2fb42b245d612a6f33df"
         )
     ]
 )
